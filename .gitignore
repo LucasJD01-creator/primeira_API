@@ -1,0 +1,4 @@
+# o que for posto aqui, não será enviado para o repositório remoto (github, gitlab, etc)
+
+node_modules/
+.env
