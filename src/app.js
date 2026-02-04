@@ -2,6 +2,7 @@
 
 const express = require('express'); // importação do express
 const app = express(); // atribuição do express à variável app
+const { testConnection } = require('./config/db'); // importa a função de teste de conexão com o banco de dados
 
 // middlewares globais - executados em todas as requisições
 // middleware: funções que interceptam requisições/respostas para adicionar funcionalidades
@@ -9,6 +10,24 @@ app.use(express.json()); // para interpretar JSON no corpo das requisições
 
 // rota padrão
 app.get('/', (req, res) => res.send({ status: 'ok', message: 'API funcionando' })); // rota de teste
+
+// middleware de tratamento de erro simples
+app.use((err, req, res, next) => { // captura erros - app.use se encontra pelo numero de argumentos/parâmetros, como em poo
+  console.error(err); // log do erro no console - para fins de depuração
+  res.status(err.status || 500).json({ error: err.message || 'Erro interno' }); // resposta de erro em JSON
+});
+
+async function verificarDB() {
+  const resultado = await testConnection();
+  console.log(resultado.message);
+}
+verificarDB();
+
+module.exports = app; // exportação do app para uso em outros arquivos (ex: index.js, server.js)
+
+/*
+
+================ EXEMPLOS DE ROTAS ==============
 
 // exemplo de rota com parâmetro 'hello' após a url padrão
 app.get('/hello', (req, res) => // req: requisição, res: resposta
@@ -37,12 +56,4 @@ app.get('/alunos/programacao-de-aplicativos/notas', (req, res) => // rota com /p
   })
 );
 
-// aqui abaixo, podem ser adicionadas outras rotas conforme necessário
-
-// middleware de tratamento de erro simples
-app.use((err, req, res, next) => { // captura erros - app.use se encontra pelo numero de argumentos/parâmetros, como em poo
-  console.error(err); // log do erro no console - para fins de depuração
-  res.status(err.status || 500).json({ error: err.message || 'Erro interno' }); // resposta de erro em JSON
-});
-
-module.exports = app; // exportação do app para uso em outros arquivos (ex: index.js, server.js)
+*/
