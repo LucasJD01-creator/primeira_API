@@ -3,13 +3,15 @@
 const express = require('express'); // importação do express
 const app = express(); // atribuição do express à variável app
 const { testConnection } = require('./config/db'); // importa a função de teste de conexão com o banco de dados
-
+const serverRoutes = require('./server');
 // middlewares globais - executados em todas as requisições
 // middleware: funções que interceptam requisições/respostas para adicionar funcionalidades
 app.use(express.json()); // para interpretar JSON no corpo das requisições
 
 // rota padrão
 app.get('/', (req, res) => res.send({ status: 'ok', message: 'API funcionando' })); // rota de teste
+
+app.use('/', serverRoutes);
 
 // middleware de tratamento de erro simples
 app.use((err, req, res, next) => { // captura erros - app.use se encontra pelo numero de argumentos/parâmetros, como em poo
