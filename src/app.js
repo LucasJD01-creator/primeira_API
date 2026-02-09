@@ -13,25 +13,6 @@ app.get('/', (req, res) => res.send({ status: 'ok', message: 'API funcionando' }
 
 app.use('/', serverRoutes);
 
-// middleware de tratamento de erro simples
-app.use((err, req, res, next) => { // captura erros - app.use se encontra pelo numero de argumentos/parâmetros, como em poo
-  console.error(err); // log do erro no console - para fins de depuração
-  res.status(err.status || 500).json({ error: err.message || 'Erro interno' }); // resposta de erro em JSON
-});
-
-async function verificarDB() {
-  const resultado = await testConnection();
-  console.log(resultado.message);
-}
-verificarDB();
-
-module.exports = app; // exportação do app para uso em outros arquivos (ex: index.js, server.js)
-
-/*
-
-================ EXEMPLOS DE ROTAS ==============
-
-// exemplo de rota com parâmetro 'hello' após a url padrão
 app.get('/hello', (req, res) => // req: requisição, res: resposta
   res.send({ message: 'Hello, World!' }) // resposta com mensagem simples (string)
 );
@@ -58,4 +39,17 @@ app.get('/alunos/programacao-de-aplicativos/notas', (req, res) => // rota com /p
   })
 );
 
-*/
+// middleware de tratamento de erro simples
+app.use((err, req, res, next) => { // captura erros - app.use se encontra pelo numero de argumentos/parâmetros, como em poo
+  console.error(err); // log do erro no console - para fins de depuração
+  res.status(err.status || 500).json({ error: err.message || 'Erro interno' }); // resposta de erro em JSON
+});
+
+async function verificarDB() {
+  const resultado = await testConnection();
+  console.log(resultado.message);
+}
+verificarDB();
+
+module.exports = app; // exportação do app para uso em outros arquivos (ex: index.js, server.js)
+
