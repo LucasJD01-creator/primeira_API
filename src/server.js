@@ -14,15 +14,5 @@ app.use('/barbeiros', barbeirosRoutes);
 app.use('/clientes', clientesRoutes);
 app.use('/servicos', servicosRoutes);
 
-// Rotas específicas que precisam ser mantidas no caminho original
-app.use('/produtos-com-categoria', (req, res, next) => {
-  req.url = '/com-categoria';
-  produtosRoutes(req, res, next);
-});
-
-app.use('/movimentacoes-completas', (req, res, next) => {
-  req.url = '/completas';
-  movimentacoesRoutes(req, res, next);
-});
 
 module.exports = app;
