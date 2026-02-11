@@ -6,7 +6,7 @@ const app = express();
 const agendaRoutes = require('./routes/agenda');
 const barbeirosRoutes = require('./routes/barbeiros');
 const clientesRoutes = require('./routes/clientes');
-const servicosRoutes = require('./routes/servicos');
+const servicosRoutes = require('./routes/servicos'); 
 
 // Usar os módulos de rotas
 app.use('/agenda', agendaRoutes);

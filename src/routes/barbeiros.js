@@ -2,53 +2,46 @@ const express = require('express');
 const { pool } = require('../config/db');
 const router = express.Router();
 
-// ====================== ESTOQUE / HISTORICO ======================
 
-// Rota GET para /historico-estoque - consulta todo o histórico de estoque
-// Retorna todo o histórico de estoque - SELECT * FROM histórico_estoque
+// consulta a tabela barbeiros
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM histórico_estoque ORDER BY id_historico DESC');
+    const [rows] = await pool.execute('SELECT * FROM barbeiros');
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao consultar histórico de estoque:', error);
-    res.status(500).json({ error: 'Erro ao consultar histórico de estoque', details: error.message });
+    console.error('Erro ao consultar barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao consultar barbeiro', details: error.message });
   }
 });
 
-// Rota GET para /historico-estoque/:id - consulta um registro específico do histórico
-// Retorna um registro específico do histórico - SELECT * FROM histórico_estoque WHERE id_historico = ?
+// consulta barbeiro pelo id
 router.get('/:id', async (req, res) => {
-  const historicoId = req.params.id;
+  const barbeirosId = req.params.id; 
   try {
-    const [rows] = await pool.execute('SELECT * FROM histórico_estoque WHERE id_historico = ?', [historicoId]);
+    const [rows] = await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [barbeirosId]);
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Registro de histórico não encontrado' });
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
     }
-    res.json(rows[0]);
+    res.json(rows[0]); 
   } catch (error) {
-    console.error('Erro ao consultar histórico de estoque:', error);
-    res.status(500).json({ error: 'Erro ao consultar histórico de estoque', details: error.message });
+    console.error('Erro ao consultar barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao consultar barbeiro', details: error.message });
   }
 });
 
 // Rota GET para /historico-estoque/produto/:id_produto - consulta histórico de um produto específico
 // Retorna o histórico de estoque de um produto através das movimentações
-router.get('/produto/:id_produto', async (req, res) => {
-  const produtoId = req.params.id_produto;
-  try {
-    const query = `
-      SELECT h.*, m.tipo, m.quantidade, m.data_movimentacao, m.observacao
-      FROM histórico_estoque h
-      INNER JOIN movimentacoes m ON h.id_movimentacao = m.id_movimentacao
-      WHERE m.id_produto = ?
-      ORDER BY m.data_movimentacao DESC
-    `;
-    const [rows] = await pool.execute(query, [produtoId]);
-    res.json(rows);
+router.get('/nome/:nome', async (req,res) => {
+  const Nome = req.params.nome;
+  try{
+    const [rows] = await pool.execute('SELECT * FROM barbeiros WHERE Nome = ?',[Nome]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
+    }
+    res.json(rows[0]); 
   } catch (error) {
-    console.error('Erro ao consultar histórico do produto:', error);
-    res.status(500).json({ error: 'Erro ao consultar histórico do produto', details: error.message });
+    console.error('Erro ao consultar barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao consultar barbeiro', details: error.message });
   }
 });
 
