@@ -29,8 +29,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Rota GET para /historico-estoque/produto/:id_produto - consulta histórico de um produto específico
-// Retorna o histórico de estoque de um produto através das movimentações
+// Rota GET para / consultar barbeiro pelo nome
 router.get('/nome/:nome', async (req,res) => {
   const Nome = req.params.nome;
   try{
@@ -45,104 +44,210 @@ router.get('/nome/:nome', async (req,res) => {
   }
 });
 
-// Rota DELETE - /historico/:id - exclui um registro do histórico de estoque
+// Rota DELETE - /barbeiros/:id - deleta um barbeiro pelo id
 router.delete('/:id', async (req, res) => {
-  const historicoId = req.params.id;
-  
+  const barbeirosId= req.params.id;
   try {
-    // Primeiro verifica se o registro de histórico existe
-    const [historico] = await pool.execute('SELECT * FROM histórico_estoque WHERE id_historico = ?', [historicoId]);
-    if (historico.length === 0) {
-      return res.status(404).json({ error: 'Registro de histórico não encontrado' });
+// Primeiro verifica se o barbeiro existe
+    const [barbeiro]= await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [barbeirosId]);
+    if (barbeiro.length === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encotrado'});
     }
-
-    // Remove o registro do histórico
-    const [result] = await pool.execute('DELETE FROM histórico_estoque WHERE id_historico = ?', [historicoId]);
+// Procede com a exclusão do barbeiro 
+    const [result] = await pool.execute('DELETE FROM barbeiros WHERE id  = ?', [barbeirosId]);
     
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Registro de histórico não encontrado' });
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
     }
 
     res.json({ 
-      message: 'Registro de histórico excluído com sucesso',
-      id: historicoId,
-      estoque_anterior: historico[0].estoque_anterior,
-      estoque_posterior: historico[0].estoque_posterior,
-      id_movimentacao: historico[0].id_movimentacao
+      message: 'Barbeiro excluído com sucesso',
+      cliente: cliente[0].nome,
+      id: barbeirosId
     });
 
   } catch (error) {
-    console.error('Erro ao excluir registro de histórico:', error);
-    res.status(500).json({ error: 'Erro ao excluir registro de histórico', details: error.message });
+    console.error('Erro ao excluir barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao excluir barbeiro, consulte se o barbeiro tem agendamento. Se "sim" exclua o agendamento', details: error.message });
   }
+  });
+
+// Rota POST - /barbeiros - cria um novo barbeiro 
+// Insere um novo barbeiro na tabela 'barbeiros' - INSERT INTO barbeiros  (nome) VALUES (?)
+router.post('/', async (req, res) => {
+  const { CPF,Nome,Telefone,Email } = req.body;
+
+  // Verifica o tamanho do CPF do barbeiro, se está dentro dos 11 caracteres permitidos 
+  if(CPF.length > 11){
+    return res.status(400).json({
+      error:'CPF muito longo, use até 11 caracteres',
+      message: 'O CPF deve conter 11 caracteres'
+    });
+  }
+  
+// Validação de dados
+  if (!Nome || Nome.trim() === '') {
+    return res.status(400).json({ 
+      error: 'Nome do barbeiro é obrigatório',
+      message: 'Forneça um nome válido para o barbeiro'
+    });
+  }
+
+// Verifica o tamanho do nome do barbeiro, se está dentro dos 50 caracteres permitidos 
+  if (Nome.length > 50) {
+    return res.status(400).json({ 
+      error: 'Nome muito longo',
+      message: 'O nome do barbeiro deve ter no máximo 50 caracteres'
+    });
+  }
+
+// Verifica o tamanho do telefone do barbeiro, se está dentro dos 11 caracteres permitidos 
+  if(Telefone.length > 11){
+    return res.status(400).json({
+      error:'Telefone muito longo, use até 11 caracteres',
+      message: 'O telefone deve ter no máximo 11 caracteres'
+    });
+  }
+
+// Verifica o tamanho do E-mail do barbeiro, se está dentro dos 50 caracteres permitidos 
+  if(Email.length > 50){
+    return res.status(400).json({
+      error:'E-mail muito longo, use até 50 caracteres',
+      message: 'O E-mail deve ter no máximo 50 caracteres'
+    });
+  }
+
+// Verifica se já existe um barbeiro com este nome
+  try {
+    const [barbeiroExistente] = await pool.execute('SELECT * FROM barbeiros WHERE nome = ?', [Nome]);
+    if (barbeiroExistente.length > 0) {
+      return res.status(409).json({ 
+        error: 'Barbeiro já existe',
+        message: `Já existe um barbeiro com o nome "${Nome}"`
+      });
+    }
+
+// Insere um novo barbeiro
+    const [result] = await pool.execute('INSERT INTO barbeiros (CPF,Nome,Email,Telefone) VALUES (?,?,?,?)', [CPF,Nome,Email,Telefone]);
+
+// Busca um barbeiro inserido para retornar os dados completos (incluindo o ID criado automaticamente,CPF,Nome,E-mail,Telefone)
+    const [novoBarbeiro] = await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [result.insertId]);
+res.status(201).json({
+      message: 'Barbeiro cadastrado com sucesso',
+      cliente: novoBarbeiro[0]
+    });
+    } catch (error) {
+    console.error('Erro ao cadastrar barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao cadastrar barbeiro', details: error.message });
+  }
+  
 });
 
-// Rota DELETE - /historico/movimentacao/:id_movimentacao - exclui histórico por movimentação
-router.delete('/movimentacao/:id_movimentacao', async (req, res) => {
-  const movimentacaoId = req.params.id_movimentacao;
-  
-  try {
-    // Primeiro verifica se existe histórico para esta movimentação
-    const [historicos] = await pool.execute('SELECT COUNT(*) as total FROM histórico_estoque WHERE id_movimentacao = ?', [movimentacaoId]);
-    if (historicos[0].total === 0) {
-      return res.status(404).json({ error: 'Nenhum histórico encontrado para esta movimentação' });
-    }
+// Rota PUT - /barbeiros/:id - atualiza um barbeiro específico pelo ID
+// Atualiza os dados de um barbeiro existente - UPDATE categorias SET CPF,Nome,Email,Telefone = ? WHERE CPF,id,Nome,E-mail,Telefone = ?
+router.put('/:id', async (req, res) => {
+  const barbeirosId = req.params.id;
+  const { CPF,Nome,Email,Telefone } = req.body;
 
-    // Remove todos os registros de histórico desta movimentação
-    const [result] = await pool.execute('DELETE FROM histórico_estoque WHERE id_movimentacao = ?', [movimentacaoId]);
-
-    res.json({ 
-      message: 'Registros de histórico da movimentação excluídos com sucesso',
-      id_movimentacao: movimentacaoId,
-      registros_excluidos: result.affectedRows
+   // Verifica o tamanho do CPF do barbeiro, se está dentro dos 11 caracteres permitidos 
+  if(CPF.length > 11){
+    return res.status(400).json({
+      error:'CPF muito longo, use até 11 caracteres',
+      message: 'O CPF deve conter 11 caracteres'
     });
-
-  } catch (error) {
-    console.error('Erro ao excluir histórico da movimentação:', error);
-    res.status(500).json({ error: 'Erro ao excluir histórico da movimentação', details: error.message });
   }
-});
 
-// Rota DELETE - /historico/produto/:id_produto - exclui todo histórico de um produto
-router.delete('/produto/:id_produto', async (req, res) => {
-  const produtoId = req.params.id_produto;
-  
-  try {
-    // Primeiro verifica se o produto existe
-    const [produto] = await pool.execute('SELECT nome FROM produtos WHERE id_produto = ?', [produtoId]);
-    if (produto.length === 0) {
-      return res.status(404).json({ error: 'Produto não encontrado' });
-    }
+  // Validação de dados
+  if (!Nome || Nome.trim() === '') {
+    return res.status(400).json({ 
+      error: 'Nome do barbeiro é obrigatório',
+      message: 'Forneça um nome válido para o barbeiro'
+    })
+  }
 
-    // Conta quantos registros de histórico serão excluídos
-    const [historicos] = await pool.execute(`
-      SELECT COUNT(*) as total 
-      FROM histórico_estoque h
-      INNER JOIN movimentacoes m ON h.id_movimentacao = m.id_movimentacao
-      WHERE m.id_produto = ?
-    `, [produtoId]);
-    
-    if (historicos[0].total === 0) {
-      return res.status(404).json({ error: 'Nenhum histórico encontrado para este produto' });
-    }
+  if (!Email || Email.trim() === '') {
+    return res.status(400).json({ 
+      error: 'Email do barbeiro é obrigatório',
+      message: 'Forneça um Email válido para o barbeiro'
+    })
+  }
 
-    // Remove todos os registros de histórico do produto
-    const [result] = await pool.execute(`
-      DELETE h FROM histórico_estoque h
-      INNER JOIN movimentacoes m ON h.id_movimentacao = m.id_movimentacao
-      WHERE m.id_produto = ?
-    `, [produtoId]);
-
-    res.json({ 
-      message: 'Todo o histórico do produto foi excluído com sucesso',
-      produto: produto[0].nome,
-      registros_excluidos: result.affectedRows,
-      warning: 'Esta ação é irreversível e remove todo o histórico de estoque do produto'
+  if (!Telefone || Telefone.trim() === '') {
+    return res.status(400).json({ 
+      error: 'Telefone do barbeiro é obrigatório',
+      message: 'Forneça um Telefone válido para o barbeiro'
+    })
+  }
+   
+// Verifica o tamanho do nome do barbeiro, se está dentro dos 50 caracteres permitidos 
+  if (Nome.length > 50) {
+    return res.status(400).json({ 
+      error: 'Nome muito longo',
+      message: 'O nome do barbeiro deve ter no máximo 50 caracteres'
     });
+  }
 
-  } catch (error) {
-    console.error('Erro ao excluir histórico do produto:', error);
-    res.status(500).json({ error: 'Erro ao excluir histórico do produto', details: error.message });
+// Verifica o tamanho do E-mail do barbeiro, se está dentro dos 50 caracteres permitidos
+  if (Email.length > 50) {
+    return res.status(400).json({ 
+      error: 'E-mail muito longo',
+      message: 'O E-mail do barbeiro deve ter no máximo 50 caracteres'
+    });
+  }
+
+// Verifica o tamanho do telefone do barbeiro, se está dentro dos 11 caracteres permitidos
+  if (Telefone.length > 11) {
+    return res.status(400).json({ 
+      error: 'Telefone muito longo',
+      message: 'O Telefone do barbeiro deve ter no máximo 11 caracteres'
+    });
+  }
+
+  // Primeiro verifica se o barbeiro existe
+  try {
+    const [barbeiroExistente] = await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [barbeirosId]);
+    if (barbeiroExistente.length === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
+    }
+  
+// Verifica se já existe outro barbeiro com este nome
+    const [barbeiroComMesmoNome] = await pool.execute(
+      'SELECT * FROM barbeiros WHERE nome = ? AND id = ?', 
+      [Nome, barbeirosId]
+    );
+    if (barbeiroComMesmoNome.length > 0) {
+      return res.status(409).json({ 
+        error: 'Barbeiro já existe',
+        message: `Já existe outro barbeiro com o nome "${Nome}"`
+      });
+    }
+
+// Se o nome é o mesmo que já existe, não precisa atualizar
+    if (barbeiroExistente[0].nome === Nome) {
+      return res.status(200).json({
+        message: 'Barbeiro não foi modificado',
+        barbeiro: barbeiroExistente[0],
+        observacao: 'O barbeiro fornecido é igual ao barbeiro atual já cadastrado'
+      });
+    }
+
+// Atualiza o barbeiro 
+    const [resultNome] = await pool.execute('UPDATE barbeiro SET CPF = ?, Nome = ?, Email = ?, Telefone = ? WHERE id = ?', [CPF,Nome, Email, Telefone, barbeirosId]);
+    if (resultNome.affectedRows === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
+    }
+
+// Busca o barbeiro atualizado para retornar os dados completos
+    const [barbeiroAtualizado] = await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [barbeirosId]);
+
+    res.json({
+      message: 'Barbeiro atualizada com sucesso',
+      barbeiroAtualizado: barbeiroAtualizado[0],
+      barbeiroAnterior: barbeiroExistente[0]
+    });
+    } catch (error) {
+    console.error('Erro ao atualizar barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao atualizar barbeiro', details: error.message });
   }
 });
 
