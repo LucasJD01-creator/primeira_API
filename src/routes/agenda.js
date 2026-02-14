@@ -2,74 +2,115 @@ const express = require('express');
 const { pool } = require('../config/db');
 const router = express.Router();
 
-// ====================== CATEGORIAS ======================
-
-// Rota GET - /categorias
-// Retorna somente a coluna 'nome' da tabela 'categorias' - SELECT nome FROM categorias
-router.get('/', async (req, res) => {
+// ✅ GET - listar todos os agendamentos
+router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT nome FROM categorias');
+    const [rows] = await pool.execute("SELECT * FROM agenda");
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao consultar categorias:', error);
-    res.status(500).json({ error: 'Erro ao consultar categorias', details: error.message });
+    console.error("Erro ao consultar agenda:", error);
+    res.status(500).json({ error: "Erro ao consultar agenda", details: error.message });
   }
 });
 
-// Rota GET para /categorias/:id - consulta uma categoria específica pelo ID ( : = parâmetro obrigatório e variável )
-// Retorna a categoria correspondente ao ID fornecido - SELECT * FROM categorias WHERE id_categoria = ?
-router.get('/:id', async (req, res) => {
-  const categoriaId = req.params.id;
+// ✅ GET - buscar agendamento por ID
+router.get("/:id", async (req, res) => {
+  const agendaId = req.params.id;
+
   try {
-    const [rows] = await pool.execute('SELECT * FROM categorias WHERE id_categoria = ?', [categoriaId]);
+    const [rows] = await pool.execute(
+      "SELECT * FROM agenda WHERE Id_agendamento = ?",
+      [agendaId]
+    );
+
     if (rows.length === 0) {
-      return res.status(404).json({ error: 'Categoria não encontrada' });
+      return res.status(404).json({ error: "Agendamento não encontrado" });
     }
+
     res.json(rows[0]);
   } catch (error) {
-    console.error('Erro ao consultar categoria:', error);
-    res.status(500).json({ error: 'Erro ao consultar categoria', details: error.message });
+    console.error("Erro ao buscar agendamento:", error);
+    res.status(500).json({ error: "Erro ao buscar agendamento", details: error.message });
   }
 });
 
-// Rota DELETE - /categorias/:id - deleta uma categoria
-router.delete('/:id', async (req, res) => {
-  const categoriaId = req.params.id;
-  
+// ✅ POST - criar novo agendamento
+router.post("/", async (req, res) => {
+  const { Data_agendamento, Hora, Servico, Status_agendamento, id_cliente, CPF_barbeiro } = req.body;
+
   try {
-    // Primeiro verifica se a categoria existe
-    const [categoria] = await pool.execute('SELECT * FROM categorias WHERE id_categoria = ?', [categoriaId]);
-    if (categoria.length === 0) {
-      return res.status(404).json({ error: 'Categoria não encontrada' });
-    }
+    const [result] = await pool.execute(
+      `INSERT INTO agenda (Data_agendamento, Hora, Servico, Status_agendamento, id_cliente, CPF_barbeiro)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [Data_agendamento, Hora, Servico, Status_agendamento, id_cliente, CPF_barbeiro]
+    );
 
-    // Verifica se existem produtos vinculados a esta categoria
-    const [produtos] = await pool.execute('SELECT COUNT(*) as total FROM produtos WHERE id_categoria = ?', [categoriaId]);
-    if (produtos[0].total > 0) {
-      return res.status(400).json({ 
-        error: 'Não é possível excluir a categoria',
-        message: `Existem ${produtos[0].total} produto(s) vinculado(s) a esta categoria. Remova ou reclassifique os produtos antes de excluir a categoria.`
-      });
-    }
-
-    // Se não há produtos vinculados, procede com a exclusão
-    const [result] = await pool.execute('DELETE FROM categorias WHERE id_categoria = ?', [categoriaId]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Categoria não encontrada' });
-    }
-
-    res.json({ 
-      message: 'Categoria excluída com sucesso',
-      categoria: categoria[0].nome,
-      id: categoriaId
+    res.status(201).json({
+      message: "Agendamento criado com sucesso",
+      id: result.insertId
     });
-
   } catch (error) {
-    console.error('Erro ao excluir categoria:', error);
-    res.status(500).json({ error: 'Erro ao excluir categoria', details: error.message });
+    console.error("Erro ao criar agendamento:", error);
+    res.status(500).json({ error: "Erro ao criar agendamento", details: error.message });
   }
 });
 
+// ✅ PUT - atualizar agendamento por ID
+router.put("/:id", async (req, res) => {
+  const agendaId = req.params.id;
+  const { Data_agendamento, Hora, Servico, Status_agendamento, id_cliente, CPF_barbeiro } = req.body;
+
+  try {
+    const [result] = await pool.execute(
+      `UPDATE agenda
+       SET Data_agendamento = ?, Hora = ?, Servico = ?, Status_agendamento = ?, id_cliente = ?, CPF_barbeiro = ?
+       WHERE Id_agendamento = ?`,
+      [Data_agendamento, Hora, Servico, Status_agendamento, id_cliente, CPF_barbeiro, agendaId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Agendamento não encontrado" });
+    }
+
+    res.json({ message: "Agendamento atualizado com sucesso", id: agendaId });
+  } catch (error) {
+    console.error("Erro ao atualizar agendamento:", error);
+    res.status(500).json({ error: "Erro ao atualizar agendamento", details: error.message });
+  }
+});
+
+// ✅ DELETE - excluir agendamento por ID (ARRUMADO E FUNCIONANDO)
+router.delete("/:id", async (req, res) => {
+  const agendaId = req.params.id;
+
+  try {
+    const [agenda] = await pool.execute(
+      "SELECT * FROM agenda WHERE Id_agendamento = ?",
+      [agendaId]
+    );
+
+    if (agenda.length === 0) {
+      return res.status(404).json({ error: "Agendamento não encontrado" });
+    }
+
+    const [result] = await pool.execute(
+      "DELETE FROM agenda WHERE Id_agendamento = ?",
+      [agendaId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Agendamento não encontrado" });
+    }
+
+    res.json({
+      message: "Agendamento excluído com sucesso",
+      agendamento_excluido: agenda[0],
+      id: agendaId
+    });
+  } catch (error) {
+    console.error("Erro ao excluir agendamento:", error);
+    res.status(500).json({ error: "Erro ao excluir agendamento", details: error.message });
+  }
+});
 
 module.exports = router;

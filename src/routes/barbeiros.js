@@ -72,15 +72,43 @@ router.delete('/:id', async (req, res) => {
   }
   });
 
+  //DELETE - /barbeiros/nome/:nome - deleta um barbeiro pelo nome
+router.delete('/nome/:nome', async (req, res) => {
+  const Nome = req.params.nome;
+  try {
+// Primeiro verifica se o barbeiro existe
+    const [barbeiro]= await pool.execute('SELECT * FROM barbeiros WHERE Nome = ?', [Nome]);
+    if (barbeiro.length === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encotrado'});
+    }
+// Procede com a exclusão do barbeiro 
+    const [result] = await pool.execute('DELETE FROM barbeiros WHERE Nome  = ?', [Nome]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
+    }
+
+    res.json({ 
+      message: 'Barbeiro excluído com sucesso',
+      cliente: cliente[0].nome,
+      id: barbeirosId
+    });
+
+  } catch (error) {
+    console.error('Erro ao excluir barbeiro:', error);
+    res.status(500).json({ error: 'Erro ao excluir barbeiro, consulte se o barbeiro tem agendamento. Se "sim" exclua o agendamento', details: error.message });
+  }
+  });
+
 // Rota POST - /barbeiros - cria um novo barbeiro 
 // Insere um novo barbeiro na tabela 'barbeiros' - INSERT INTO barbeiros  (nome) VALUES (?)
 router.post('/', async (req, res) => {
-  const { CPF,Nome,Telefone,Email } = req.body;
+  const { CPF,Nome,Telefone,Email, } = req.body;
 
   // Verifica o tamanho do CPF do barbeiro, se está dentro dos 11 caracteres permitidos 
   if(CPF.length > 11){
     return res.status(400).json({
-      error:'CPF muito longo, use até 11 caracteres',
+      error:'CPF muito longo, deve conter 11 caracteres',
       message: 'O CPF deve conter 11 caracteres'
     });
   }
@@ -250,5 +278,122 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro ao atualizar barbeiro', details: error.message });
   }
 });
+
+// Rota PATCH - /clientes/:id - atualiza algum dado específico do cliente 
+// Atualização sem afetar outros campos.
+router.patch('/updateNome/:id', async (req, res) => {
+  const clientesId = req.params.id;
+  const { Nome } = req.body;
+
+// Verifica o tamanho do nome do cliente, se está dentro dos 50 caracteres permitidos 
+  if (Nome.length > 50) {
+    return res.status(400).json({ 
+      error: 'Nome muito longo',
+      message: 'O nome do cliente deve ter no máximo 50 caracteres'
+    });
+  }
+  try {
+// Primeiro verifica se o cliente existe e está ativo
+    const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ? ', [clientesId]);
+    if (clienteExistente.length === 0) {
+      return res.status(404).json({ error: 'cliente não encontrado ou inativo' });
+    }
+  
+
+// Atualiza os dados do cliente 
+    const[result] = await pool.execute('UPDATE cliente SET Nome  = ? WHERE id = ?', [Nome,clientesId]);
+
+   if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'cliente não encontrado' });
+    }
+    res.json({
+      message: 'Nome atualizado com sucesso',
+      cliente: {
+        id: clientesId,
+        nome: clienteExistente[0].nome,
+      }
+     });
+     
+    } catch (error) {
+    console.error('Erro ao atualizar Nome:', error);
+    res.status(500).json({ error: 'Erro ao atualizar Nome', details: error.message });
+  }
+});
+
+router.patch('/updateEmail/:id', async (req, res) => {
+  const barbeirosId = req.params.id;
+  const { Email } = req.body;
+
+  // Verifica o tamanho do E-mail do barbeiro, se está dentro dos 50 caracteres permitidos 
+  if (Email.length > 50) {
+    return res.status(400).json({ 
+      error: 'E-mail muito longo',
+      message: 'O E-mail do barbeiro deve ter no máximo 50 caracteres'
+    });
+  }
+// Primeiro verifica se o barbeiro existe e está ativo
+  try{
+  const [barbeiroExistente] = await pool.execute('SELECT * FROM barbeiros WHERE id = ? ', [barbeirosId]);
+    if (barbeiroExistente.length === 0) {
+      return res.status(404).json({ error: 'barbeiro não encontrado ou inativo' });
+    }
+// Atualiza os dados do cliente 
+    const [resultEmail] = await pool.execute('UPDATE barbeiros SET Email  = ? WHERE id = ?', [Email,barbeirosId]);
+
+   if (resultEmail.affectedRows === 0) {
+      return res.status(404).json({ error: 'E-mail não encontrado' });
+    }
+    res.json({
+      message: 'Email atualizado com sucesso',
+      barbeiro: {
+        id: barbeirosId,
+        Email: barbeiroExistente[0].Email,
+    }
+     });
+     
+    } catch (error) {
+    console.error('Erro ao atualizar E-mail:', error);
+    res.status(500).json({ error: 'Erro ao atualizar E-mail', details: error.message });
+  }
+});
+
+router.patch('/updateTelefone/:id', async (req, res) => {
+  const barbeirosId = req.params.id;
+  const { Telefone } = req.body;
+
+// Verifica o tamanho do Telefone do barbeiro, se está dentro dos 11 caracteres permitidos 
+  if (Telefone.length > 11) {
+    return res.status(400).json({ 
+      error: 'Telefone muito longo',
+      message: 'O telefone do barbeiro deve ter no máximo 11 caracteres'
+    });
+  }
+  // Primeiro verifica se o barbeiro existe e está ativo
+  try{
+  const [barbeiroExistente] = await pool.execute('SELECT * FROM barbeiros WHERE id = ? ', [barbeirosId]);
+    if (barbeiroExistente.length === 0) {
+      return res.status(404).json({ error: 'barbeiro não encontrado ou inativo' });
+    }
+
+ // Atualiza os dados do barbeiro 
+    const [resultTelefone] = await pool.execute('UPDATE barbeiros SET Telefone  = ? WHERE id = ?', [Telefone,barbeirosId]);
+
+   if (resultTelefone.affectedRows === 0) {
+      return res.status(404).json({ error: 'telefone não encontrado' });
+    }
+    res.json({
+      message: 'Telefone atualizado com sucesso',
+      barbeiro: {
+        id: barbeirosId,
+        Telefone: barbeiroExistente[0].Telefone,
+    }
+     });
+     
+    } catch (error) {
+    console.error('Erro ao atualizar Telefone:', error);
+    res.status(500).json({ error: 'Erro ao atualizar telefone', details: error.message });
+  }
+});
+
 
 module.exports = router;

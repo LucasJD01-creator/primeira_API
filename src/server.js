@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('./config/db'); // importa a pool de conexões com o banco de dados
 const app = express();
 
+
 // Importar os módulos de rotas
 const agendaRoutes = require('./routes/agenda');
 const barbeirosRoutes = require('./routes/barbeiros');
