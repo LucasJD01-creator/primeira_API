@@ -90,8 +90,7 @@ router.delete('/nome/:nome', async (req, res) => {
 
     res.json({ 
       message: 'Barbeiro excluído com sucesso',
-      cliente: cliente[0].nome,
-      id: barbeirosId
+      barbeiro: barbeiro[0].nome,
     });
 
   } catch (error) {
@@ -162,7 +161,7 @@ router.post('/', async (req, res) => {
     const [novoBarbeiro] = await pool.execute('SELECT * FROM barbeiros WHERE id = ?', [result.insertId]);
 res.status(201).json({
       message: 'Barbeiro cadastrado com sucesso',
-      cliente: novoBarbeiro[0]
+      barbeiro: novoBarbeiro[0]
     });
     } catch (error) {
     console.error('Erro ao cadastrar barbeiro:', error);
@@ -279,38 +278,38 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Rota PATCH - /clientes/:id - atualiza algum dado específico do cliente 
+// Rota PATCH - /barbeiros/:id - atualiza algum dado específico do barbeiro 
 // Atualização sem afetar outros campos.
 router.patch('/updateNome/:id', async (req, res) => {
-  const clientesId = req.params.id;
+  const barbeirosId = req.params.id;
   const { Nome } = req.body;
 
-// Verifica o tamanho do nome do cliente, se está dentro dos 50 caracteres permitidos 
+// Verifica o tamanho do nome do barbeiro, se está dentro dos 50 caracteres permitidos 
   if (Nome.length > 50) {
     return res.status(400).json({ 
       error: 'Nome muito longo',
-      message: 'O nome do cliente deve ter no máximo 50 caracteres'
+      message: 'O nome do barbeiro deve ter no máximo 50 caracteres'
     });
   }
   try {
-// Primeiro verifica se o cliente existe e está ativo
-    const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ? ', [clientesId]);
-    if (clienteExistente.length === 0) {
-      return res.status(404).json({ error: 'cliente não encontrado ou inativo' });
+// Primeiro verifica se o barbeiro existe e está ativo
+    const [barbeiroExistente] = await pool.execute('SELECT * FROM barbeiros WHERE id = ? ', [barbeirosId]);
+    if (barbeiroExistente.length === 0) {
+      return res.status(404).json({ error: 'barbeiro não encontrado ou inativo' });
     }
   
 
-// Atualiza os dados do cliente 
-    const[result] = await pool.execute('UPDATE cliente SET Nome  = ? WHERE id = ?', [Nome,clientesId]);
+// Atualiza os dados do barbeiro 
+    const[result] = await pool.execute('UPDATE barbeiros SET Nome  = ? WHERE id = ?', [Nome,barbeirosId]);
 
    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'cliente não encontrado' });
+      return res.status(404).json({ error: 'barbeiro não encontrado' });
     }
     res.json({
       message: 'Nome atualizado com sucesso',
-      cliente: {
-        id: clientesId,
-        nome: clienteExistente[0].nome,
+      barbeiro: {
+        id: barbeirosId,
+        nome: barbeiroExistente[0].nome,
       }
      });
      
@@ -337,7 +336,7 @@ router.patch('/updateEmail/:id', async (req, res) => {
     if (barbeiroExistente.length === 0) {
       return res.status(404).json({ error: 'barbeiro não encontrado ou inativo' });
     }
-// Atualiza os dados do cliente 
+// Atualiza os dados do barbeiro 
     const [resultEmail] = await pool.execute('UPDATE barbeiros SET Email  = ? WHERE id = ?', [Email,barbeirosId]);
 
    if (resultEmail.affectedRows === 0) {
