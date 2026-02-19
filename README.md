@@ -15,6 +15,13 @@
     DB_NAME=LosBarbeiros
 
 ```
+ ###### **•Importante : Sempre que fizer qualquer modificação nos arquivos do projeto, salve o arquivo (Ctrl + S) antes de testar novamente.**
+
+```bash
+
+    ctrl + s
+
+```
 
 ## Objetivo do Projeto :
  O objetivo é praticar o desenvolvimento de uma API REST usando Node.js e Express.
@@ -317,7 +324,7 @@ Exemplo de JSON:
   "Data_agendamento": "2026-02-17",
   "Hora": "10:32:00",
   "Servico": "Corte + Barba",
-  "Status_agendamento": "ativo",
+  "Status_agendamento": true,
   "id_cliente": 1,
   "CPF_barbeiro": "01123456789"
 }
