@@ -3,10 +3,10 @@ const { pool } = require('../config/db');
 const router = express.Router();
 
 // Rota GET - /clientes 
-// Retorna as colunas 'id,Nome,Email,Telefone' da tabela 'Clientes' - SELECT nome FROM Cliente
+// Retorna as colunas 'id,Nome,Email,Telefone' da tabela 'Clientes' - SELECT nome FROM Clientes
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.execute('SELECT * FROM Cliente');
+    const [rows] = await pool.execute('SELECT * FROM Clientes');
     res.json(rows);
   } catch (error) {
     console.error('Erro ao consultar clientes:', error);
@@ -14,11 +14,11 @@ router.get('/', async (req, res) => {
   }
 });
 // Rota GET para /clientes/:id - consulta um cliente específico pelo ID 
-// Retorna o cliente correspondente ao ID fornecido - SELECT * FROM cliente WHERE id = ?
+// Retorna o cliente correspondente ao ID fornecido - SELECT * FROM clientes WHERE id = ?
 router.get('/:id', async (req, res) => {
   const clientesId = req.params.id; 
   try {
-    const [rows] = await pool.execute('SELECT * FROM cliente WHERE id = ?', [clientesId]);
+    const [rows] = await pool.execute('SELECT * FROM clientes WHERE id = ?', [clientesId]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
@@ -29,11 +29,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 // Rota GET para /clientes/nome/:nome - consulta um cliente específico pelo nome  
-// Retorna o cliente correspondente ao nome fornecido  - SELECT * FROM cliente  WHERE Nome = ?
+// Retorna o cliente correspondente ao nome fornecido  - SELECT * FROM clientes  WHERE Nome = ?
 router.get('/nome/:nome', async (req,res) => {
   const Nome = req.params.nome;
   try{
-    const [rows] = await pool.execute('SELECT * FROM cliente WHERE Nome = ?',[Nome]);
+    const [rows] = await pool.execute('SELECT * FROM clientes WHERE Nome = ?',[Nome]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
@@ -49,13 +49,13 @@ router.delete('/:id', async (req, res) => {
   const clientesId= req.params.id;
   try {
 // Primeiro verifica se o cliente existe
-    const [cliente]= await pool.execute('SELECT * FROM cliente WHERE id = ?', [clientesId]);
+    const [cliente]= await pool.execute('SELECT * FROM clientes WHERE id = ?', [clientesId]);
     if (cliente.length === 0) {
       return res.status(404).json({ error: 'Cliente não encotrado'});
     }
 
 // Procede com a exclusão do cliente
-    const [result] = await pool.execute('DELETE FROM cliente WHERE id  = ?', [clientesId]);
+    const [result] = await pool.execute('DELETE FROM clientes WHERE id  = ?', [clientesId]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
@@ -117,7 +117,7 @@ router.post('/', async (req, res) => {
 // Verifica se já existe uma cliente com este nome
   try {
 // Verifica se já existe uma cliente com este nome
-    const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE nome = ?', [Nome]);
+    const [clienteExistente] = await pool.execute('SELECT * FROM clientes WHERE nome = ?', [Nome]);
     if (clienteExistente.length > 0) {
       return res.status(409).json({ 
         error: 'Cliente já existe',
@@ -126,10 +126,10 @@ router.post('/', async (req, res) => {
     }
 
 // Insere um novo cliente 
-    const [result] = await pool.execute('INSERT INTO cliente (Nome,Email,Telefone) VALUES (?,?,?)', [Nome,Email,Telefone]);
+    const [result] = await pool.execute('INSERT INTO clientes (Nome,Email,Telefone) VALUES (?,?,?)', [Nome,Email,Telefone]);
   
 // Busca um cliente inserido para retornar os dados completos (incluindo o ID criado automaticamente,Nome,E-mail,Telefone)
-const [novoCliente] = await pool.execute('SELECT * FROM cliente WHERE id = ?', [result.insertId]);
+const [novoCliente] = await pool.execute('SELECT * FROM clientes WHERE id = ?', [result.insertId]);
   res.status(201).json({
       message: 'Cliente cadastrado com sucesso',
       cliente: novoCliente[0]
@@ -192,14 +192,14 @@ router.put('/:id', async (req, res) => {
   // Primeiro verifica se o cliente existe
   try {
 // Primeiro verifica se o cliente existe
-    const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ?', [clientesId]);
+    const [clienteExistente] = await pool.execute('SELECT * FROM clientes WHERE id = ?', [clientesId]);
     if (clienteExistente.length === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
   
 // Verifica se já existe outro cliente com este nome
     const [clienteComMesmoNome] = await pool.execute(
-      'SELECT * FROM cliente WHERE nome = ? AND id = ?', 
+      'SELECT * FROM clientes WHERE nome = ? AND id = ?', 
       [Nome, clientesId]
     );
     if (clienteComMesmoNome.length > 0) {
@@ -218,13 +218,13 @@ router.put('/:id', async (req, res) => {
     }
 
 // Atualiza o cliente 
-    const [resultNome] = await pool.execute('UPDATE cliente SET Nome = ?, Email = ?, Telefone = ? WHERE id = ?', [Nome, Email, Telefone, clientesId]);
+    const [resultNome] = await pool.execute('UPDATE clientes SET Nome = ?, Email = ?, Telefone = ? WHERE id = ?', [Nome, Email, Telefone, clientesId]);
     if (resultNome.affectedRows === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
 
 // Busca o cliente atualizado para retornar os dados completos
-    const [clienteAtualizado] = await pool.execute('SELECT * FROM cliente WHERE id = ?', [clientesId]);
+    const [clienteAtualizado] = await pool.execute('SELECT * FROM clientes WHERE id = ?', [clientesId]);
 
     res.json({
       message: 'Cliente atualizada com sucesso',
@@ -252,14 +252,14 @@ router.patch('/updateNome/:id', async (req, res) => {
   }
   try {
 // Primeiro verifica se o cliente existe e está ativo
-    const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ? ', [clientesId]);
+    const [clienteExistente] = await pool.execute('SELECT * FROM clientes WHERE id = ? ', [clientesId]);
     if (clienteExistente.length === 0) {
       return res.status(404).json({ error: 'cliente não encontrado ou inativo' });
     }
   
 
 // Atualiza os dados do cliente 
-    const[result] = await pool.execute('UPDATE cliente SET Nome  = ? WHERE id = ?', [Nome,clientesId]);
+    const[result] = await pool.execute('UPDATE clientes SET Nome  = ? WHERE id = ?', [Nome,clientesId]);
 
    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'cliente não encontrado' });
@@ -291,12 +291,12 @@ router.patch('/updateEmail/:id', async (req, res) => {
   }
 // Primeiro verifica se o cliente existe e está ativo
   try{
-  const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ? ', [clientesId]);
+  const [clienteExistente] = await pool.execute('SELECT * FROM clientes WHERE id = ? ', [clientesId]);
     if (clienteExistente.length === 0) {
       return res.status(404).json({ error: 'cliente não encontrado ou inativo' });
     }
 // Atualiza os dados do cliente 
-    const [resultEmail] = await pool.execute('UPDATE cliente SET Email  = ? WHERE id = ?', [Email,clientesId]);
+    const [resultEmail] = await pool.execute('UPDATE clientes SET Email  = ? WHERE id = ?', [Email,clientesId]);
 
    if (resultEmail.affectedRows === 0) {
       return res.status(404).json({ error: 'E-mail não encontrado' });
@@ -328,13 +328,13 @@ router.patch('/updateTelefone/:id', async (req, res) => {
   }
   // Primeiro verifica se o cliente existe e está ativo
   try{
-  const [clienteExistente] = await pool.execute('SELECT * FROM cliente WHERE id = ? ', [clientesId]);
+  const [clienteExistente] = await pool.execute('SELECT * FROM clientes WHERE id = ? ', [clientesId]);
     if (clienteExistente.length === 0) {
       return res.status(404).json({ error: 'cliente não encontrado ou inativo' });
     }
 
  // Atualiza os dados do cliente 
-    const [resultTelefone] = await pool.execute('UPDATE cliente SET Telefone  = ? WHERE id = ?', [Telefone,clientesId]);
+    const [resultTelefone] = await pool.execute('UPDATE clientes SET Telefone  = ? WHERE id = ?', [Telefone,clientesId]);
 
    if (resultTelefone.affectedRows === 0) {
       return res.status(404).json({ error: 'telefone não encontrado' });
